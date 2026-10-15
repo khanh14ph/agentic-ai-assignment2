@@ -1,0 +1,48 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["steps"],
+  "properties": {
+    "steps": {
+      "type": "array",
+      "description": "The steps, in the order they run.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "action", "tool", "args_json", "depends_on", "expected_result", "status"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Unique within the plan: 1, 2, 3, ..."
+          },
+          "action": {
+            "type": "string",
+            "description": "What the step does, in words."
+          },
+          "tool": {
+            "type": ["string", "null"],
+            "description": "The one tool the step calls, by name."
+          },
+          "args_json": {
+            "type": "string",
+            "description": "The tool's arguments as a JSON object written as a string, like {\"query\": \"$fill\"}. One that depends on an earlier step's result is \"$fill\"."
+          },
+          "depends_on": {
+            "type": "array",
+            "description": "The ids of the steps whose results this step uses; [] if none, which makes it independent.",
+            "items": {"type": "integer"}
+          },
+          "expected_result": {
+            "type": ["string", "null"],
+            "description": "What the step returns when it worked."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "done", "failed"],
+            "description": "pending in a new plan; the executor sets done or failed as each step runs."
+          }
+        }
+      }
+    }
+  }
+}

@@ -34,22 +34,67 @@ the trace, and say how in your report.
 
 from __future__ import annotations
 
+import json
+
+from agent.diff import match_calls, tool_calls
+
 
 def repeat_check(trace: list[dict]) -> list[list]:
-    raise NotImplementedError("Assignment 2 Part E: the repeat check")
+    """Circular reasoning: tool calls with the same tool and the exact same arguments."""
+    groups = {}
+    for call in tool_calls(trace):
+        key = (call["name"], json.dumps(call.get("input"), sort_keys=True))
+        groups.setdefault(key, []).append(call["step"])
+    return [steps for steps in groups.values() if len(steps) > 1]
 
 
 def orphan_check(plan: dict) -> list:
-    raise NotImplementedError("Assignment 2 Part E: the orphan check")
+    """Hallucinated steps: steps (not the last) that no later step lists in depends_on."""
+    steps = plan["steps"]
+    orphans = []
+    for i, step in enumerate(steps[:-1]):
+        used = any(str(step["id"]) in {str(d) for d in later.get("depends_on") or []} for later in steps[i + 1:])
+        if not used:
+            orphans.append(step["id"])
+    return orphans
 
 
 def expected_result_check(plan: dict, trace: list[dict]) -> list:
-    raise NotImplementedError("Assignment 2 Part E: the expected-result check")
+    """Premature stopping (partly): plan steps with no matching call, or whose call was an error.
+    A step with no tool (like "identify the bug") never returns anything, so it counts too."""
+    matched = match_calls(plan, trace)
+    return [s["id"] for s in plan["steps"]
+            if s["id"] not in matched or matched[s["id"]].get("is_error")]
+
+
+def unused_from_trace(trace: list[dict]) -> list:
+    """Question 2 when the plan has no depends_on, so it has to be a judgment from the trace.
+    My rule: if the exact same call is made again later, the agent did not use what it
+    got the first time (it went and asked again). Returns those first calls' step numbers."""
+    return sorted(group[i] for group in repeat_check(trace) for i in range(len(group) - 1))
 
 
 def ladder(plan: dict, trace: list[dict]) -> dict:
-    raise NotImplementedError("Assignment 2 Part E: questions 1 to 3")
+    """Lecture 2's questions 1 to 3, in order."""
+    repeats = repeat_check(trace)
+    # q2 from the dependency graph if the plan has one, otherwise from the trace
+    has_deps = any("depends_on" in s for s in plan["steps"])
+    unused = orphan_check(plan) if has_deps else unused_from_trace(trace)
+    missing = expected_result_check(plan, trace)
+    return {"q1": {"fired": bool(repeats), "ids": repeats},
+            "q2": {"fired": bool(unused), "ids": unused},
+            "q3": {"fired": bool(missing), "ids": missing}}
 
 
 if __name__ == "__main__":
-    raise SystemExit("Assignment 2 Part E: print both runs' ladders here, if you like")
+    from pathlib import Path
+
+    from agent.diff import diff
+    from harness.trace import read_trace
+
+    root = Path(__file__).resolve().parent.parent / "fixtures" / "traces"
+    for name in ("looping", "s49"):
+        plan = json.loads((root / name / "plan.json").read_text())
+        trace = read_trace(root / name / "trace.jsonl")
+        print(name, json.dumps(ladder(plan, trace)))
+        print(name, "diff", json.dumps(diff(plan, trace)))

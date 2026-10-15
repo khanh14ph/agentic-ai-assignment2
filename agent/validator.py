@@ -28,6 +28,44 @@ fails is rejected, re-planned up to your bound, then escalated. Never executed.
 
 from __future__ import annotations
 
+from agent.loop import load_bounds
+
+
+def _blank(value) -> bool:
+    """True if the value is None or an empty string."""
+    return value is None or (isinstance(value, str) and not value.strip())
+
 
 def validate(plan: dict) -> dict:
-    raise NotImplementedError("Assignment 2 Part B: the four checks")
+    meta = plan.get("meta") or {}
+    steps = plan.get("steps")
+    steps = steps if isinstance(steps, list) else []
+    tools = set(meta.get("tools") or [])
+    failures = []
+
+    earlier = set()   # ids of steps we already saw, as strings so 1 and "1" match
+    for step in steps:
+        step = step if isinstance(step, dict) else {}
+        sid = step.get("id")
+        tool = step.get("tool")
+
+        # check 1: tool must be in meta.tools (no tool at all is check 3, not here)
+        if not _blank(tool) and tool not in tools:
+            failures.append({"step": sid, "check": 1})
+
+        # check 2: can only depend on steps we already saw (so not later, not itself, not missing)
+        depends = step.get("depends_on") or []
+        if not isinstance(depends, list) or any(str(d) not in earlier for d in depends):
+            failures.append({"step": sid, "check": 2})
+
+        # check 3: needs a tool and an expected_result
+        if _blank(tool) or _blank(step.get("expected_result")):
+            failures.append({"step": sid, "check": 3})
+
+        earlier.add(str(sid))
+
+    # check 4: between 1 and max_steps steps
+    if not 1 <= len(steps) <= load_bounds().max_steps:
+        failures.append({"step": None, "check": 4})
+
+    return {"valid": not failures, "failures": failures}

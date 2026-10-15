@@ -1,10 +1,9 @@
 # RepoMind settings.
 #
-# YOUR MODEL. Use your Assignment 1 model: copy the provider, model, base_url and
-# api_key_env lines from your Assignment 1 repository's settings.yaml, and change
-# nothing else in this file. Any vendor's model with tool calling works, but Part F
-# reruns Assignment 1's agent, and on the same model its runs can be read beside the
-# ones you measured there. Hold it fixed for the whole assignment: every comparison
+# YOUR MODEL. Choose any model, from any vendor, that supports tool (function)
+# calling, and pay for it with your own key. A cheap one is fine: each assignment
+# compares designs on one model, never models against each other. Choose it
+# before Assignment 1's Part B and hold it fixed for the whole assignment: every comparison
 # you make holds it fixed. The model is named here and in pricing.yaml, nowhere else.
 #
 #   Claude, through Anthropic's API:
@@ -21,10 +20,10 @@
 #
 # Then add your model's price line to pricing.yaml and run `make ping`.
 
-provider: null
-model: null
-base_url: null
-api_key_env: null
+provider: openai-compatible
+model: gemini-3.5-flash-lite
+base_url: https://generativelanguage.googleapis.com/v1beta/openai/
+api_key_env: GEMINI_API_KEY
 
 # Output cap for one model response. Lower it if your model's limit is smaller.
 max_tokens: 8000
@@ -41,7 +40,7 @@ fallbacks: null
 # Hard ceilings, enforced by the harness outside your code.
 # Your own loop's token budget must sit below session_token_ceiling.
 session_token_ceiling: 400000      # one run
-lab_token_ceiling: 3500000         # every run in this assignment, summed from runs/_ledger.jsonl
+lab_token_ceiling: 4000000         # every run in this lab, summed from runs/_ledger.jsonl
 
 # How many runs the runner executes at once. On a free tier or if you hit rate
 # limits, pass --jobs 1 to run.py rather than editing this file.

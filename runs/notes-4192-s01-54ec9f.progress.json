@@ -1,0 +1,13 @@
+{
+ "about": "RepoMind's progress file for this run. steps_done: plan step ids that have run, in order. paths: every file path a search returned or a read read in this run, in order. It is a record of what was already seen, not a to-do list.",
+ "steps_done": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "paths": [
+  "src/components/ExportButton.tsx",
+  "src/components/ReportTable.tsx"
+ ]
+}
